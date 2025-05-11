@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provision License Plate - DUCKTECH Admin</title>
+    <link rel="stylesheet" href="../css/style.css"> <!-- Assuming style.css is in a parent css folder -->
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #f9f9f9; /* Light theme for admin panels */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .header {
+            background-color: #1a1a2e;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header .user-info a {
+            color: #ffc107;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+        .container {
+            padding: 30px;
+            max-width: 700px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .container h2 {
+            color: #1a1a2e;
+            border-bottom: 2px solid #0f3460;
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+        .btn-submit {
+            background-color: #0f3460;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        .btn-submit:hover {
+            background-color: #16213e;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        #plateCodeGroup, #plateNumberGroup {
+            display: none; /* Initially hidden */
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>DUCKTECH Admin</h1>
+        <div class="user-info">
+            <span id="adminEmail"></span>
+            <a href="admin_dashboard.html" style="color: #fff; text-decoration: underline;">Back to Dashboard</a>
+            <a href="#" id="logoutBtnAdmin">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Provision New License Plate</h2>
+        <div id="provisionMessage" class="message" style="display:none;"></div>
+        <form id="provisionLicenseForm">
+            <div class="form-group">
+                <label for="plateDigits">License Plate Number (1-5 digits)</label>
+                <input type="text" id="plateDigits" name="plateDigits" pattern="\d{1,5}" title="Enter 1 to 5 digits" required>
+            </div>
+
+            <div class="form-group">
+                <label for="emirate">Emirate</label>
+                <select id="emirate" name="emirate" required>
+                    <option value="">-- Select Emirate --</option>
+                    <option value="dubai">Dubai</option>
+                    <option value="abudhabi">Abu Dhabi</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="plateCodeGroup">
+                <label for="plateCode">Plate Code (A-Z for Dubai)</label>
+                <select id="plateCode" name="plateCode">
+                    <!-- Options A-Z will be populated by JS -->
+                </select>
+            </div>
+
+            <div class="form-group" id="plateNumberGroup">
+                <label for="plateNumber">Plate Code (1-50 for Abu Dhabi)</label>
+                <input type="number" id="plateNumber" name="plateNumber" min="1" max="50">
+            </div>
+
+            <button type="submit" class="btn-submit">Provision License Plate</button>
+        </form>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/auth_check.js"></script>
+    <script src="js/admin_provision.js"></script>
+</body>
+</html> 

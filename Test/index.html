@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Automotive Asset Network</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <style>
+        /* Base styles */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background-color: #f9f9f9;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Header */
+        .header {
+            background-color: #1a1a2e;
+            color: white;
+            padding: 10px 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 500;
+        }
+        .search-container {
+            display: flex;
+            align-items: center;
+        }
+        .search-container input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-results {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            max-width: 300px;
+            z-index: 1000;
+        }
+        .header-controls {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            background-color: #0f3460;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background-color: #16213e;
+        }
+        .btn.active {
+            background-color: #e94560;
+        }
+        .btn.highlight {
+            animation: pulse 1s infinite;
+            background-color: #FF5722;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 87, 34, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 87, 34, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 87, 34, 0); }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: calc(300px - 1px); /* Account for the border */
+            background-color: white;
+            border-right: 1px solid #e0e0e0;
+            height: calc(100% - 60px); /* Account for the header height */
+            overflow-y: auto;
+            padding-top: 10px; /* Reduced padding to avoid cutting off content */
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            margin-top: 60px; /* Match the header height to start below it */
+        }
+        .sidebar-section {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .sidebar h2 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        .filter-group-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+        .filter-items {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .filter-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+        }
+        .filter-item input {
+            margin-right: 5px;
+        }
+        .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        /* Analytics section */
+        .analytics-tabs {
+            display: flex;
+            border-bottom: 1px solid #eee;
+        }
+        .analytics-tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+        }
+        .analytics-tab.active {
+            border-bottom: 2px solid #0f3460;
+            color: #0f3460;
+            font-weight: 500;
+        }
+        .chart-container {
+            height: 200px;
+            margin: 15px 0;
+        }
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .stat-card {
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            padding: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #16213e;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Main graph area */
+        .main {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            padding-top: 60px;
+        }
+        svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .node {
+            cursor: pointer;
+        }
+        .link {
+            stroke-opacity: 0.6;
+            stroke-width: 2px;
+        }
+        .link-label {
+            font-size: 10px;
+            pointer-events: none;
+            text-shadow: 0 0 2px white, 0 0 2px white, 0 0 2px white, 0 0 2px white;
+        }
+        .node-label {
+            font-size: 12px;
+            font-weight: 500;
+            pointer-events: none;
+            text-shadow: 0 0 2px white, 0 0 2px white, 0 0 2px white, 0 0 2px white;
+        }
+        
+        /* Floating panels */
+        .panel {
+            position: absolute;
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .panel-header {
+            background-color: #0f3460;
+            color: white;
+            padding: 10px 15px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .panel-body {
+            padding: 15px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        /* Details panel */
+        .details-panel {
+            top: 80px;
+            right: 20px;
+            width: 320px;
+            display: none;
+        }
+        .details-panel.active {
+            display: block;
+        }
+        .panel-section {
+            margin-bottom: 15px;
+        }
+        .panel-section h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #333;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-item {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        .detail-label {
+            font-weight: 500;
+            width: 120px;
+            font-size: 13px;
+        }
+        .detail-value {
+            flex: 1;
+            font-size: 13px;
+        }
+        .connection-item {
+            background-color: #f5f5f5;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .connection-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .connection-type {
+            color: #666;
+            font-size: 12px;
+        }
+        .connection-value {
+            color: #0f3460;
+            font-weight: 500;
+        }
+
+        /* Simulation panel */
+        .simulation-panel {
+            top: 80px;
+            left: 320px;
+            width: 360px;
+            display: none;
+        }
+        .simulation-panel.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .simulation-results {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+        .sim-result-item {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .sim-result-label {
+            font-weight: 500;
+        }
+        
+        /* Clustering controls */
+        .clustering-controls {
+            position: absolute;
+            left: 320px;
+            bottom: 20px;
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+            z-index: 10;
+        }
+        .clustering-title {
+            font-weight: 500;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .clustering-slider {
+            width: 250px;
+        }
+        
+        /* Instructions */
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 250px;
+            z-index: 10;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .instructions ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 12px;
+        }
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        /* Style for a generic close button on panels */
+        .close-panel-btn {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            font-weight: bold;
+            color: #888; /* Light grey, adjust as needed */
+            cursor: pointer;
+            padding: 0 5px;
+            line-height: 1;
+        }
+        .close-panel-btn:hover {
+            color: #333; /* Darker on hover */
+        }
+        .instructions .close-panel-btn {
+            /* Specific adjustments if needed for instruction panel */
+            color: #aaa; /* Override if a different default color is needed here */
+        }
+        .instructions .close-panel-btn:hover {
+            color: #000;
+        }
+        
+        /* Loading indicator */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+        }
+        .loading.active {
+            display: block;
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0,0,0,0.8);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        /* Cluster visualization */
+        .cluster-hull {
+            opacity: 0.25;
+            stroke-width: 3px;
+            stroke-opacity: 0.8;
+        }
+        
+        /* Path finder panel */
+        .path-finder-panel {
+            top: 80px;
+            left: 320px;
+            width: 360px;
+            display: none;
+        }
+        .path-finder-panel.active {
+            display: block;
+        }
+        .path-results {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .path-node {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .path-arrow {
+            margin: 0 8px;
+            color: #666;
+        }
+        .path-label {
+            margin-left: 5px;
+        }
+        
+        /* Export panel */
+        .export-panel {
+            top: 80px;
+            right: 20px;
+            width: 320px;
+            display: none;
+        }
+        .export-panel.active {
+            display: block;
+        }
+        
+        /* Search styles */
+        .search-container {
+            position: relative;
+            margin: 0 20px;
+        }
+        .search-container input {
+            width: 250px;
+            padding: 8px 12px;
+            border: none;
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-radius: 4px;
+        }
+        .search-container input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 1000;
+        }
+        .search-results.active {
+            display: block;
+        }
+        .search-result-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .search-result-item:hover {
+            background-color: #f9f9f9;
+        }
+        .search-result-item .entity-type {
+            font-size: 11px;
+            color: #666;
+            margin-left: 5px;
+        }
+        
+        /* Graph density controls */
+        .density-controls {
+            position: absolute;
+            left: 320px;
+            bottom: 100px;
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+            z-index: 10;
+        }
+        .density-title {
+            font-weight: 500;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .density-slider {
+            width: 250px;
+        }
+        .vertical-density-controls {
+            bottom: 180px; /* Position it above the horizontal one or adjust as needed */
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>Advanced Automotive Asset Network</h1>
+        <div class="search-container">
+            <input type="text" id="entitySearch" placeholder="Search entities..." />
+            <div id="searchResults" class="search-results"></div>
+        </div>
+        <div class="header-controls">
+            <button id="clusteringBtn" class="btn">Enable Clustering</button>
+            <button id="simulationBtn" class="btn">Run Simulation</button>
+            <button id="fitBtn" class="btn">Fit Graph</button>
+            <button id="cashFlowBtn" class="btn">Cash Flow View</button>
+            <button id="pathfinderBtn" class="btn">Path Finder</button>
+            <button id="exportBtn" class="btn">Export Data</button>
+            <button id="resortBtn" class="btn">Resort Graph</button>
+        </div>
+    </div>
+    
+    <!-- Main container -->
+    <div class="container">
+        <!-- Sidebar with filters and analytics -->
+        <div class="sidebar">
+            <!-- Filters -->
+            <div class="sidebar-section">
+                <h2>Filters</h2>
+                <div class="filter-group">
+                    <div class="filter-group-title">Node Types</div>
+                    <div class="filter-items" id="nodeTypeFilters">
+                        <!-- Node type filters will be added here -->
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <div class="filter-group-title">Relationship Types</div>
+                    <div class="filter-items" id="edgeTypeFilters">
+                        <!-- Edge type filters will be added here -->
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <div class="filter-group-title">Transaction Range</div>
+                    <input type="range" id="transactionFilter" min="0" max="100" value="0" class="slider">
+                    <div id="transactionFilterValue">Min: $0</div>
+                </div>
+            </div>
+            
+            <!-- Analytics -->
+            <div class="sidebar-section">
+                <h2>Network Analytics</h2>
+                <div class="analytics-tabs">
+                    <button class="analytics-tab active" data-tab="overview">Overview</button>
+                    <button class="analytics-tab" data-tab="financial">Financial</button>
+                    <button class="analytics-tab" data-tab="connectivity">Connectivity</button>
+                </div>
+                
+                <!-- Overview Tab -->
+                <div class="analytics-content" id="overview-tab">
+                    <div class="stat-cards">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalNodesValue">0</div>
+                            <div class="stat-label">Total Entities</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalConnectionsValue">0</div>
+                            <div class="stat-label">Relationships</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="avgConnectionsValue">0</div>
+                            <div class="stat-label">Avg. Connections</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="networkDensityValue">0%</div>
+                            <div class="stat-label">Network Density</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="nodeDistributionChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Financial Tab -->
+                <div class="analytics-content" id="financial-tab" style="display: none;">
+                    <div class="stat-cards">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalTransactionValue">$0</div>
+                            <div class="stat-label">Total Transaction Value</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="avgTransactionValue">$0</div>
+                            <div class="stat-label">Avg. Transaction</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="transactionChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Connectivity Tab -->
+                <div class="analytics-content" id="connectivity-tab" style="display: none;">
+                    <div class="stat-cards">
+                        <div class="stat-card">
+                            <div class="stat-value" id="centralNodeValue">-</div>
+                            <div class="stat-label">Most Central Node</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="clustersValue">0</div>
+                            <div class="stat-label">Clusters</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="connectivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data sources-->
+            <div class="sidebar-section">
+                <h2>Top Entities</h2>
+                <div id="topEntitiesList">
+                    <!-- Will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main graph area -->
+        <div class="main">
+            <svg id="graph"></svg>
+        </div>
+    </div>
+    
+    <!-- Details panel -->
+    <div id="detailsPanel" class="panel details-panel">
+        <div class="panel-header">
+            <span id="detailsTitle">Node Details</span>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="panel-body">
+            <div class="panel-section">
+                <div id="detailsType"></div>
+            </div>
+            <div class="panel-section">
+                <h3>Properties</h3>
+                <div id="detailsProperties"></div>
+            </div>
+            <div class="panel-section">
+                <h3>Network Analysis</h3>
+                <div id="detailsAnalytics"></div>
+            </div>
+            <div class="panel-section">
+                <h3>Connections</h3>
+                <div id="detailsConnections"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Simulation panel -->
+    <div id="simulationPanel" class="panel simulation-panel">
+        <div class="panel-header">
+            <span>Simulation Scenario</span>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="simulationType">Simulation Type</label>
+                <select id="simulationType">
+                    <option value="price_change">Price Change Impact</option>
+                    <option value="demand_shift">Demand Shift</option>
+                    <option value="supply_disruption">Supply Chain Disruption</option>
+                    <option value="new_relationship">New Relationship</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="primaryEntity">Primary Entity</label>
+                <select id="primaryEntity">
+                    <!-- Will be populated dynamically -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="impactLevel">Impact Level</label>
+                <input type="range" id="impactLevel" min="1" max="10" value="5">
+                <div id="impactLevelValue">Moderate (5)</div>
+            </div>
+            <div class="form-group">
+                <label for="propagationDepth">Propagation Depth</label>
+                <select id="propagationDepth">
+                    <option value="1">Direct Connections Only</option>
+                    <option value="2" selected>Secondary Connections</option>
+                    <option value="3">Tertiary Connections</option>
+                    <option value="all">Entire Network</option>
+                </select>
+            </div>
+            <button id="runSimulationBtn" class="btn">Run Simulation</button>
+            
+            <div id="simulationResults" class="simulation-results" style="display: none;">
+                <h3>Simulation Results</h3>
+                <div id="simulationResultsContent">
+                    <!-- Will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Path Finder panel -->
+    <div id="pathFinderPanel" class="panel path-finder-panel">
+        <div class="panel-header">
+            <span>Find Connection Paths</span>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="sourceEntity">Source Entity</label>
+                <select id="sourceEntity">
+                    <!-- Will be populated dynamically -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="targetEntity">Target Entity</label>
+                <select id="targetEntity">
+                    <!-- Will be populated dynamically -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="pathType">Path Type</label>
+                <select id="pathType">
+                    <option value="shortest">Shortest Path</option>
+                    <option value="all">All Paths</option>
+                    <option value="strongest">Strongest Connection</option>
+                    <option value="highest_value">Highest Value</option>
+                </select>
+            </div>
+            <button id="findPathBtn" class="btn">Find Path</button>
+            
+            <div id="pathResults" class="path-results" style="display: none;">
+                <h3>Path Results</h3>
+                <div id="pathResultsContent">
+                    <!-- Will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Options panel -->
+    <div id="exportPanel" class="panel export-panel">
+        <div class="panel-header">
+            <span>Export Data</span>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="exportFormat">Export Format</label>
+                <select id="exportFormat">
+                    <option value="json">JSON</option>
+                    <option value="csv">CSV</option>
+                    <option value="png">Network Image (PNG)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="exportData">Export Data</label>
+                <select id="exportData">
+                    <option value="all">Complete Network</option>
+                    <option value="filtered">Current View</option>
+                    <option value="selected">Selected Node & Connections</option>
+                    <option value="analytics">Analytics Report</option>
+                </select>
+            </div>
+            <button id="exportDataBtn" class="btn">Export</button>
+        </div>
+    </div>
+    
+    <!-- Clustering controls -->
+    <div class="clustering-controls" style="display: none;">
+        <div class="clustering-title">Clustering Sensitivity</div>
+        <input type="range" min="1" max="10" value="5" class="clustering-slider" id="clusteringSensitivity">
+        <div>Low <span id="sensitivityValue">5</span> High</div>
+    </div>
+    
+    <!-- Graph density controls -->
+    <div class="density-controls">
+        <div class="density-title">Horizontal Density</div>
+        <input type="range" min="0" max="100" value="30" id="horizontalDensitySlider" class="density-slider">
+        <div>Loose <span id="horizontalDensityValue">30</span> Tight</div>
+    </div>
+
+    <div class="density-controls vertical-density-controls">
+        <div class="density-title">Vertical Density</div>
+        <input type="range" min="0" max="100" value="30" id="verticalDensitySlider" class="density-slider">
+        <div>Loose <span id="verticalDensityValue">30</span> Tight</div>
+    </div>
+    
+    <!-- Instructions panel -->
+    <div class="instructions" id="instructionsPanel">
+        <button class="close-panel-btn" id="closeInstructionsBtn">&times;</button>
+        <h3>Instructions</h3>
+        <ul>
+            <li>Click + drag to pan the graph</li>
+            <li>Use scroll wheel to zoom in/out</li>
+            <li>Click on nodes to see details</li>
+            <li>Enable clustering to see relationship groups</li>
+            <li>Run simulations to analyze "what-if" scenarios</li>
+        </ul>
+    </div>
+    
+    <!-- Loading indicator -->
+    <div id="loading" class="loading">Processing...</div>
+    
+    <!-- Tooltip -->
+    <div id="tooltip" class="tooltip"></div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

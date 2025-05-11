@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - DUCKTECH</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #f9f9f9;
+        }
+        .header {
+            background-color: #1a1a2e;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header .user-info a {
+            color: #ffc107; 
+            text-decoration: none; margin-left: 20px;
+        }
+        .dashboard-container {
+            padding: 30px;
+        }
+        .dashboard-container h2 {
+            color: #1a1a2e;
+            border-bottom: 2px solid #0f3460;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .dashboard-options a {
+            display: block;
+            background-color: white;
+            color: #0f3460;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .dashboard-options a:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .admin-actions {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .admin-actions h3 {
+            margin-top: 0;
+            color: #1a1a2e;
+            margin-bottom: 15px;
+        }
+        .btn-admin-action {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s, transform 0.2s;
+            display: block; /* Make it block to take full width if needed or style further */
+            width: auto; /* Or 100% if you want full width */
+            margin-bottom: 10px;
+        }
+        .btn-admin-action.warning {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-admin-action.warning:hover {
+            background-color: #c82333;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Admin Dashboard</h1>
+        <div class="user-info">
+            <span id="adminEmail"></span>
+            <a href="#" id="logoutBtnAdmin">Logout</a>
+        </div>
+    </div>
+    <div class="dashboard-container">
+        <h2>Welcome, Admin!</h2>
+        <div class="dashboard-options">
+            <a href="index.html">Network Visualization & Main Controls</a>
+            <a href="admin_provision_license.html">Provision New License Plate</a>
+            <a href="admin_service_requests.html">Manage Service Requests</a>
+            <a href="#">User Management (Placeholder)</a>
+            <a href="#">System Analytics (Placeholder)</a>
+            <a href="#">Data Management (Placeholder)</a>
+            <a href="#">Settings (Placeholder)</a>
+        </div>
+
+        <hr style="margin: 40px 0;">
+
+        <div class="admin-actions">
+            <h3>System Actions</h3>
+            <button id="clearDataBtn" class="btn-admin-action warning">Clear & Reset Application Data (Except Admin/Guest Logins)</button>
+            <p style="font-size: 12px; color: #666;">This will clear all registered users (except guest), provisioned plates (except guest's initial cars), and reset the guest account with default cars.</p>
+        </div>
+    </div>
+    <script src="js/auth.js"></script>
+    <script src="js/admin_dashboard.js"></script>
+    <script src="js/auth_check.js"></script> 
+</body>
+</html> 
